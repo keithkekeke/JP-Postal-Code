@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Postal Code Lookup</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Postal Code Lookup</h1>
+  <input type="text" id="postalCodeInput" placeholder="Enter postal code" />
+  <button onclick="lookupPostalCode()">Lookup</button>
+  <div id="results"></div>
+
+  <script>
+    const csvUrl = "https://raw.githubusercontent.com/keithkekeke/JP-Postal-Code/refs/heads/main/jpn_post_codes_duplicates_removed_singlesheet.csv";
+    let postalCodeData = {};
+
+    // Fetch and parse the CSV
+    async function fetchAndParseCSV() {
+      try {
+        const response = await fetch(csvUrl);
+        const csvText = await response.text();
+        parseCSV(csvText);
+        console.log("CSV data loaded successfully!");
+      } catch (error) {
+        console.error("Error fetching or parsing CSV:", error);
+      }
+    }
+
+    // Parse CSV and convert it to an object for quick lookup
+    function parseCSV(csvText) {
+      const lines = csvText.split("\n");
+      const headers = lines[0].split(",");
+      const data = {};
+
+      for (let i = 1; i < lines.length; i++) {
+        const row = lines[i].split(",");
+        if (row.length !== headers.length) continue; // Skip invalid rows
+        const postalCode = row[0];
+        const regionLabel = row[1];
+        const idRegion = row[2];
+
+        if (!data[postalCode]) {
+          data[postalCode] = [];
+        }
+        data[postalCode].push({ RegionLabel: regionLabel, IdRegion: idRegion });
+      }
+
+      postalCodeData = data;
+    }
+
+    // Lookup function for postal code
+    function lookupPostalCode() {
+      const postalCode = document.getElementById("postalCodeInput").value.trim();
+      const resultsDiv = document.getElementById("results");
+      resultsDiv.innerHTML = "";
+
+      if (!postalCode) {
+        resultsDiv.innerHTML = "<p>Please enter a valid postal code.</p>";
+        return;
+      }
+
+      const results = postalCodeData[postalCode];
+
+      if (results && results.length > 0) {
+        resultsDiv.innerHTML = `<h2>Results for postal code: ${postalCode}</h2>`;
+        results.forEach((result, index) => {
+          resultsDiv.innerHTML += `
+            <p>
+              <strong>Result ${index + 1}:</strong><br>
+              RegionLabel: ${result.RegionLabel}<br>
+              IdRegion: ${result.IdRegion}
+            </p>
+          `;
+        });
+      } else {
+        resultsDiv.innerHTML = `<p>No results found for postal code: ${postalCode}</p>`;
+      }
+    }
+
+    // Fetch and parse the CSV when the page loads
+    fetchAndParseCSV();
+  </script>
+</body>
+</html>
